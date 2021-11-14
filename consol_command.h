@@ -53,6 +53,3 @@ void Out(Stack* stack);
 /// <param name="stack">Transmitted stack</param>
 /// <param name="command">String of command</param>
 void IdentifyData(Stack* stack, char* data, int size, int* memory, int* registers);
-
-
-int InputVariation(char* comstr);

@@ -34,4 +34,11 @@ void FillRegField(char* data, int* i, char* reg);
 void SeparateIntToChar(char* data, int* i, int digit);
 
 
-void PreIdentity(char** p, int lines, char data_labels[][10],int adress[]);
+/// <summary>
+/// Check existence of labels
+/// </summary>
+/// <param name="p">Lines of data</param>
+/// <param name="lines">Number of lines</param>
+/// <param name="data_labels">Array of found labels</param>
+/// <param name="adress">Index of found labels</param>
+void PreIdentity(char** p, int lines, char data_labels[][10], int adress[]);
