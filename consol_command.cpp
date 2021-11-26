@@ -1,28 +1,30 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "consol_command.h"
-
+#include "commands.h"
+#include "..\..\Stack_dinamic\Stack_dinamic\stack.h"
+#include "stdio.h"
 #include <stdio.h>
+#include <stdlib.h>
+
+#define SafetyPop(stack, value) if(Pop(stack, &value)){exit(1);}
+
 
 
 bool CheckMoreTwoElem(Stack* stack)
 {
-    if (stack == NULL)
-    {
-        AssertFunction(stack);
-    }
-    return (stack->Data->size >= 2);
+    return (stack->data->size >= 2);
 }
 
 
 void Add(Stack* stack)
 {
-    if (stack == NULL)
-    {
-        AssertFunction(stack);
-    }
     if (CheckMoreTwoElem(stack))
     {
-        Push(stack, Pop(stack) + Pop(stack));
+        int fn = 0;
+        int sn = 0;
+        SafetyPop(stack, fn);
+        SafetyPop(stack, sn);
+        Push(stack, fn + sn);
     }
     else
     {
@@ -33,13 +35,13 @@ void Add(Stack* stack)
 
 void Sub(Stack* stack)
 {
-    if (stack == NULL)
-    {
-        AssertFunction(stack);
-    }
     if (CheckMoreTwoElem(stack))
     {
-        Push(stack, Pop(stack) - Pop(stack));
+        int fn = 0;
+        int sn = 0;
+        SafetyPop(stack, fn);
+        SafetyPop(stack, sn);
+        Push(stack, fn - sn);
     }
     else
     {
@@ -50,13 +52,13 @@ void Sub(Stack* stack)
 
 void Mul(Stack* stack)
 {
-    if (stack == NULL)
-    {
-        AssertFunction(stack);
-    }
     if (CheckMoreTwoElem(stack))
     {
-        Push(stack, Pop(stack) * Pop(stack));
+        int fn = 0;
+        int sn = 0;
+        SafetyPop(stack, fn);
+        SafetyPop(stack, sn);
+        Push(stack, fn * sn);
     }
     else
     {
@@ -66,22 +68,20 @@ void Mul(Stack* stack)
 
 void Div(Stack* stack)
 {
-    if (stack == NULL)
-    {
-        AssertFunction(stack);
-    }
     if (CheckMoreTwoElem(stack))
     {
-        int first = Pop(stack);
-        int second = Pop(stack);
-        if (second != 0)
+        int fn = 0;
+        int sn = 0;
+        SafetyPop(stack, fn);
+        SafetyPop(stack, sn);
+        if (sn != 0)
         {
-            Push(stack, first / second);
+            Push(stack, fn / sn);
         }
         else
         {
-            Push(stack, second);
-            Push(stack, first);
+            Push(stack, sn);
+            Push(stack, fn);
             printf("Error! Division by zero\n");
         }
     }
@@ -94,19 +94,19 @@ void Div(Stack* stack)
 
 void Out(Stack* stack)
 {
-    for (int i = 0; i < stack->Data->size; i++)
+    for (int i = 0; i < stack->data->size; i++)
     {
-        printf("%d\n", stack->Data->data[i]);
+        printf("%d\n", stack->data->data[i]);
     }
 }
 
 void IdentifyData(Stack* stack, char* data, int size, int* memory, int* registers)
 {
-    int number_commands[1000] = {};
+    Stack* stack_ret = CreateStack("ReturnIndexes");
     for (int i = 0, k = 0; i < size; i++, k++)
     {
-        printf("%d\n", i);
-        if (data[i] == 1)
+        printf("errno %d DATA %d i %d\n", errno, data[i], i);
+        if (data[i] == PUSH)
         {
             bool reg = data[++i];
             bool constant = data[++i];
@@ -142,14 +142,14 @@ void IdentifyData(Stack* stack, char* data, int size, int* memory, int* register
                 }
                 else if (constant == 1)
                 {
-                    char value = data[++i];
+                    int* value = (int*)&data[++i];
                     if (operate_memory == 1)
                     {
                         for (int i = 0; i < 3; i++)
                         {
                             if (reg_value == i + 1)
                             {
-                                Push(stack, memory[registers[i] + value]);
+                                Push(stack, memory[registers[i] + *value]);
                                 break;
                             }
                         }
@@ -160,7 +160,7 @@ void IdentifyData(Stack* stack, char* data, int size, int* memory, int* register
                         {
                             if (reg_value == i + 1)
                             {
-                                Push(stack, registers[0] + value);
+                                Push(stack, registers[0] + *value);
                                 break;
                             }
                         }
@@ -172,20 +172,20 @@ void IdentifyData(Stack* stack, char* data, int size, int* memory, int* register
             {
                 if (constant == 1)
                 {
-                    char value = data[++i];
+                    int* value = (int*)&data[++i];
                     if (operate_memory == 0)
                     {
-                        Push(stack, value);
+                        Push(stack, *value);
                     }
                     else if (operate_memory == 1)
                     {
-                        Push(stack, memory[value]);
+                        Push(stack, memory[*value]);
                     }
                     i += sizeof(int) - 1;
                 }
             }
         }
-        else if (data[i] == 2)
+        else if (data[i] == POP)
         {
             bool reg = data[++i];
             bool constant = data[++i];
@@ -201,7 +201,7 @@ void IdentifyData(Stack* stack, char* data, int size, int* memory, int* register
                         {
                             if (reg_value == i + 1)
                             {
-                                registers[i] = Pop(stack);
+                                SafetyPop(stack, registers[i]);
                                 break;
                             }
                         }
@@ -212,19 +212,19 @@ void IdentifyData(Stack* stack, char* data, int size, int* memory, int* register
                         {
                             if (reg_value == i + 1)
                             {
-                                memory[registers[i]] = Pop(stack);
+                                SafetyPop(stack, memory[registers[i]]);
                             }
                         }
                     }
                 }
                 else if (constant == 1)
                 {
-                    char value = data[++i];
+                    int* value = (int*)&data[++i];
                     for (int i = 0; i < 3; i++)
                     {
                         if (reg_value == i + 1)
                         {
-                            memory[registers[i] + value] = Pop(stack);
+                            SafetyPop(stack, memory[registers[i] + *value]);
                         }
                     }
                     i += sizeof(int) - 1;
@@ -236,74 +236,89 @@ void IdentifyData(Stack* stack, char* data, int size, int* memory, int* register
                 {
                     if (operate_memory == 0)
                     {
-                        Pop(stack);
+                        int nothing = 0;
+                        SafetyPop(stack, nothing);
                     }
                 }
                 else if (constant == 0 && operate_memory == 1)
                 {
-                    char value = data[++i];
-                    memory[value] = Pop(stack);
+                    int* value = (int*)&data[++i];
+                    SafetyPop(stack, memory[*value]);
                     i += sizeof(int) - 1;
                 }
             }
         }
-        else if (data[i] == 3)
+        else if (data[i] == ADD)
         {
             Add(stack);
         }
-        else if (data[i] == 4)
+        else if (data[i] == SUB)
         {
             Sub(stack);
         }
-        else if (data[i] == 5)
+        else if (data[i] == MUL)
         {
             Mul(stack);
         }
-        else if (data[i] == 6)
+        else if (data[i] == DIV)
         {
             Div(stack);
         }
-        else if (data[i] == 7)
+        else if (data[i] == OUT)
         {
             Out(stack);
         }
-        else if (data[i] == 8)
+        else if (data[i] == DMP)
         {
             Dump(stack);
         }
-        else if (data[i] == 9)
+        else if (data[i] == HLT)
         {
+            printf("The end of this programm\n");
             exit(0);
         }
-        else if (data[i] == 11)
+        else if (data[i] == IN)
         {
             char reg_value = data[++i];
-            char value = data[++i];
+            int* value = (int*)&data[++i];
             for (int i = 0; i < 3; i++)
             {
                 if (reg_value == i + 1)
                 {
-                    registers[i] = value;
+                    registers[i] = *value;
                 }
             }
             i += sizeof(int) - 1;
         }
-        else if (data[i] == 12)
+        else if (data[i] == JMP)
         {
-            int jmp_comm = data[++i];
-            i = jmp_comm - 1;
+            int* jmp_comm = (int*)&data[++i];
+            i = *jmp_comm - 1;
         }
-        else if (data[i] == 13)
+        else if (data[i] == JA)
         {
-            int ja_comm = data[++i];
-            if (Size(stack) == 0)
+            int* ja_comm = (int*)&data[++i];
+            int size = 0;
+            Size(stack, &size);
+            if (size == 0)
             {
-                i = ja_comm - 1;
+                i = *ja_comm - 1;
             }
             else
             {
                 i += sizeof(int) - 1;
             }
+        }
+        else if (data[i] == CALL)
+        {
+            Push(stack_ret, i);
+            i = data[++i];
+        }
+        else if (data[i] == RET)
+        {
+            int fn = 0;
+            SafetyPop(stack_ret, fn);
+            i = fn + sizeof(int);
         }
         else
         {

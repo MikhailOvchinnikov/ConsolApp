@@ -1,9 +1,6 @@
 #pragma once
 #include "..\..\Stack_dinamic\Stack_dinamic\stack.h"
 
-#include "stdio.h"
-
-
 /// <summary>
 /// Check appropriate size of data for operations
 /// </summary>
