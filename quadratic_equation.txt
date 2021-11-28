@@ -1,0 +1,38 @@
+in ax,1
+in bx,3
+in cx,-4
+push bx
+push bx
+mul
+push -4
+push ax
+push cx
+mul
+mul
+add
+sqrt
+pop cx
+push bx
+push -1
+mul
+push cx
+add
+push 2
+push ax
+mul
+div
+push bx
+push -1
+mul
+push cx
+push -1
+mul
+add
+push 2
+push ax
+mul
+div
+out
+out
+hlt
+

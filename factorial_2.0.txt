@@ -1,0 +1,18 @@
+push 9
+pop ax
+push ax
+next:
+push ax
+push -1
+add
+pop ax
+push ax
+mul
+push ax
+push 2
+ja stop
+jmp next
+stop:
+out
+hlt
+

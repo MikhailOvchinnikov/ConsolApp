@@ -1,0 +1,19 @@
+push 9
+pop ax
+push ax
+call func
+out
+hlt
+func:
+push ax
+push 2
+ja stop
+push ax
+push -1
+add
+pop ax
+push ax
+mul
+call func
+stop:
+ret
