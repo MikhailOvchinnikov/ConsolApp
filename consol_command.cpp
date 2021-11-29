@@ -5,6 +5,7 @@
 #include "stdio.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #define SafetyPop(stack, value) if(Pop(stack, &value)){exit(1);}
 
@@ -20,8 +21,8 @@ void Add(Stack* stack)
 {
     if (CheckMoreTwoElem(stack))
     {
-        int fn = 0;
-        int sn = 0;
+        float fn = 0;
+        float sn = 0;
         SafetyPop(stack, fn);
         SafetyPop(stack, sn);
         Push(stack, fn + sn);
@@ -37,8 +38,8 @@ void Sub(Stack* stack)
 {
     if (CheckMoreTwoElem(stack))
     {
-        int fn = 0;
-        int sn = 0;
+        float fn = 0;
+        float sn = 0;
         SafetyPop(stack, fn);
         SafetyPop(stack, sn);
         Push(stack, fn - sn);
@@ -54,8 +55,8 @@ void Mul(Stack* stack)
 {
     if (CheckMoreTwoElem(stack))
     {
-        int fn = 0;
-        int sn = 0;
+        float fn = 0;
+        float sn = 0;
         SafetyPop(stack, fn);
         SafetyPop(stack, sn);
         Push(stack, fn * sn);
@@ -70,18 +71,18 @@ void Div(Stack* stack)
 {
     if (CheckMoreTwoElem(stack))
     {
-        int fn = 0;
-        int sn = 0;
+        float fn = 0;
+        float sn = 0;
         SafetyPop(stack, fn);
         SafetyPop(stack, sn);
         if (sn != 0)
         {
-            Push(stack, fn / sn);
+            Push(stack, sn / fn);
         }
         else
         {
-            Push(stack, sn);
             Push(stack, fn);
+            Push(stack, sn);
             printf("Error! Division by zero\n");
         }
     }
@@ -92,20 +93,28 @@ void Div(Stack* stack)
 }
 
 
-void Out(Stack* stack)
+void Sqrt(Stack* stack)
 {
-    for (int i = 0; i < stack->data->size; i++)
-    {
-        printf("%d\n", stack->data->data[i]);
-    }
+    float value = 0;
+    SafetyPop(stack, value);
+    float sq = (float)sqrt(value);
+    Push(stack, sq);
 }
 
-void IdentifyData(Stack* stack, char* data, int size, int* memory, int* registers)
+
+void Out(Stack* stack)
+{
+    float value = 0;
+    SafetyPop(stack, value);
+    printf("%f\n", value);
+}
+
+void IdentifyData(Stack* stack, char* data, int size, float* memory, float* registers)
 {
     Stack* stack_ret = CreateStack("ReturnIndexes");
     for (int i = 0, k = 0; i < size; i++, k++)
     {
-        printf("errno %d DATA %d i %d\n", errno, data[i], i);
+        //printf("errno %d DATA %d i %d\n", errno, data[i], i);
         if (data[i] == PUSH)
         {
             bool reg = data[++i];
@@ -134,7 +143,8 @@ void IdentifyData(Stack* stack, char* data, int size, int* memory, int* register
                         {
                             if (reg_value == i + 1)
                             {
-                                Push(stack, memory[registers[i]]);
+                                int reg_val = (int)registers[i];
+                                Push(stack, memory[reg_val]);
                                 break;
                             }
                         }
@@ -142,14 +152,15 @@ void IdentifyData(Stack* stack, char* data, int size, int* memory, int* register
                 }
                 else if (constant == 1)
                 {
-                    int* value = (int*)&data[++i];
+                    float* value = (float*)&data[++i];
                     if (operate_memory == 1)
                     {
                         for (int i = 0; i < 3; i++)
                         {
                             if (reg_value == i + 1)
                             {
-                                Push(stack, memory[registers[i] + *value]);
+                                int reg_val = (int)registers[i];
+                                Push(stack, memory[reg_val + (int)*value]);
                                 break;
                             }
                         }
@@ -172,14 +183,14 @@ void IdentifyData(Stack* stack, char* data, int size, int* memory, int* register
             {
                 if (constant == 1)
                 {
-                    int* value = (int*)&data[++i];
+                    float* value = (float*)&data[++i];
                     if (operate_memory == 0)
                     {
                         Push(stack, *value);
                     }
                     else if (operate_memory == 1)
                     {
-                        Push(stack, memory[*value]);
+                        Push(stack, memory[(int)*value]);
                     }
                     i += sizeof(int) - 1;
                 }
@@ -212,19 +223,21 @@ void IdentifyData(Stack* stack, char* data, int size, int* memory, int* register
                         {
                             if (reg_value == i + 1)
                             {
-                                SafetyPop(stack, memory[registers[i]]);
+                                int reg_val = (int)registers[i];
+                                SafetyPop(stack, memory[reg_val]);
                             }
                         }
                     }
                 }
                 else if (constant == 1)
                 {
-                    int* value = (int*)&data[++i];
+                    float* value = (float*)&data[++i];
                     for (int i = 0; i < 3; i++)
                     {
                         if (reg_value == i + 1)
                         {
-                            SafetyPop(stack, memory[registers[i] + *value]);
+                            int reg_val = (int)registers[i];
+                            SafetyPop(stack, memory[reg_val + (int)*value]);
                         }
                     }
                     i += sizeof(int) - 1;
@@ -236,14 +249,14 @@ void IdentifyData(Stack* stack, char* data, int size, int* memory, int* register
                 {
                     if (operate_memory == 0)
                     {
-                        int nothing = 0;
+                        float nothing = 0;
                         SafetyPop(stack, nothing);
                     }
                 }
                 else if (constant == 0 && operate_memory == 1)
                 {
-                    int* value = (int*)&data[++i];
-                    SafetyPop(stack, memory[*value]);
+                    float* value = (float*)&data[++i];
+                    SafetyPop(stack, memory[(int)*value]);
                     i += sizeof(int) - 1;
                 }
             }
@@ -264,6 +277,10 @@ void IdentifyData(Stack* stack, char* data, int size, int* memory, int* register
         {
             Div(stack);
         }
+        else if (data[i] == SQRT)
+        {
+            Sqrt(stack);
+        }
         else if (data[i] == OUT)
         {
             Out(stack);
@@ -274,13 +291,13 @@ void IdentifyData(Stack* stack, char* data, int size, int* memory, int* register
         }
         else if (data[i] == HLT)
         {
-            printf("The end of this programm\n");
+            printf("The end of the programm\n");
             exit(0);
         }
         else if (data[i] == IN)
         {
             char reg_value = data[++i];
-            int* value = (int*)&data[++i];
+            float* value = (float*)&data[++i];
             for (int i = 0; i < 3; i++)
             {
                 if (reg_value == i + 1)
@@ -298,9 +315,11 @@ void IdentifyData(Stack* stack, char* data, int size, int* memory, int* register
         else if (data[i] == JA)
         {
             int* ja_comm = (int*)&data[++i];
-            int size = 0;
-            Size(stack, &size);
-            if (size == 0)
+            float f_value = 0;
+            float s_value = 0;
+            SafetyPop(stack, f_value);
+            SafetyPop(stack, s_value);
+            if (f_value > s_value)
             {
                 i = *ja_comm - 1;
             }
@@ -311,14 +330,14 @@ void IdentifyData(Stack* stack, char* data, int size, int* memory, int* register
         }
         else if (data[i] == CALL)
         {
-            Push(stack_ret, i);
+            Push(stack_ret, (float)i);
             i = data[++i];
         }
         else if (data[i] == RET)
         {
-            int fn = 0;
+            float fn = 0;
             SafetyPop(stack_ret, fn);
-            i = fn + sizeof(int);
+            i = int(fn) + sizeof(int);
         }
         else
         {

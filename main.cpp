@@ -12,7 +12,8 @@
 
 int main()
 {
-    FILE* file = fopen("files/_commands.txt", "rb");
+    char file_name[] = "files/_quadratic_equation.txt";
+    FILE* file = fopen(file_name, "rb");
     if (file == NULL)
     {
         fputs("Error file open\n", stderr);
@@ -25,8 +26,8 @@ int main()
     GetParametersFile(file, text, syms);
     fclose(file);
     Stack* stack = CreateStack("Stack");
-    int* memory = (int*)calloc(20, sizeof(int));
-    int* registers = (int*)calloc(3, sizeof(int));
+    float* memory = (float*)calloc(20, sizeof(float));
+    float* registers = (float*)calloc(3, sizeof(float));
     IdentifyData(stack, text, syms, memory, registers);
     Clear(stack);
 }

@@ -38,6 +38,13 @@ void Div(Stack* stack);
 
 
 /// <summary>
+/// Replace last value in the stack to its square root
+/// </summary>
+/// <param name="stack">Transmitted stack</param>
+void Sqrt(Stack* stack);
+
+
+/// <summary>
 /// Print all elements of stack
 /// </summary>
 /// <param name="stack">Transmitted stack</param>
@@ -49,4 +56,4 @@ void Out(Stack* stack);
 /// </summary>
 /// <param name="stack">Transmitted stack</param>
 /// <param name="command">String of command</param>
-void IdentifyData(Stack* stack, char* data, int size, int* memory, int* registers);
+void IdentifyData(Stack* stack, char* data, int size, float* memory, float* registers);
