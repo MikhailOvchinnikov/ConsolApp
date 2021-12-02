@@ -1,12 +1,16 @@
 #define _CRT_SECURE_NO_WARNINGS
 
+//Header from the StackDinamic project
 #include "..\..\Stack_dinamic\Stack_dinamic\stack.h"
+
+//Header from the SortOnegin project
 #include "..\..\Sort_Onegin\Sort_Onegin\sort_text.h"
 #include "consol_command.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 
 
