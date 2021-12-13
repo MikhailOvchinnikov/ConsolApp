@@ -15,11 +15,12 @@ enum Command
     OUT,
     DMP,
     HLT = 11,
-    IN,
+    MOV,
     JMP,
     JA,
     CALL,
-    RET
+    RET,
+    IN
 };
 
 
@@ -50,8 +51,14 @@ enum ErrorCode
     COMMANDERROR,
 
     //Division by 0
-    DIVISIONERROR
+    DIVISIONERROR,
+
+    //NULL pointer
+    NULLPTR,
 };
+
+
+void FileLogCMD(const char* format, ...);
 
 
 /// <summary>
@@ -74,6 +81,26 @@ void Sqrt(Stack* stack);
 /// </summary>
 /// <param name="stack">Transmitted stack</param>
 void Out(Stack* stack);
+
+
+/// <summary>
+/// Define a presence of a register based on the mask
+/// </summary>
+/// <param name="mask">Transmitted mask of expression</param>
+/// <param name="data">Array of the data</param>
+/// <param name="ind">Current pointer to the data</param>
+/// <returns>0 if mask doesn't match and number of a register, if the mask match with one of the exist</returns>
+char SwitchMaskReg(int mask, char* data, int* ind);
+
+
+/// <summary>
+/// Define a presence of a something value based on the mask
+/// </summary>
+/// <param name="mask">Transmitted mask of expression</param>
+/// <param name="data">Array of the data</param>
+/// <param name="ind">Current pointer to the data</param>
+/// <returns>0 if mask doesn't match and value, if the mask match with one of the exist</returns>
+float SwitchMaskVal(int mask, char* data, int* ind);
 
 
 /// <summary>

@@ -6,21 +6,37 @@
 #include <stdlib.h>
 #include <math.h>
 #include <errno.h>
+#include <stdarg.h>
+
+//Count mask of getted indicator number of register, constant and operate memory
+#define MaskCount(r, c, m) r*100 + c*10 + m
 
 #define CMD_Push(stack, expression) Push(stack, expression)
 
+//Actions for arithmetic operation
 #define CMD_ADD(stack, val1, val2) CMD_Push(stack, val1 + val2)
 #define CMD_SUB(stack, val1, val2) CMD_Push(stack, val2 - val1)
 #define CMD_MUL(stack, val1, val2) CMD_Push(stack, val2*val1)
 #define CMD_DIV(stack, val1, val2) \
 if (val1 == 0){\
-    printf("Division by zero\n");\
+    FileLogCMD("Division by zero\n");\
     errno = ErrorCode::DIVISIONERROR;\
 } else {\
     CMD_Push(stack, val2 / val1);\
 }
 
 
+void FileLogCMD(const char* format, ...)
+{
+    static FILE* log_file = fopen("cmd_log.txt", "w");
+    va_list args;
+    va_start(args, format);
+    vfprintf(log_file, format, args);
+    va_end(args);
+}
+
+
+//Define operation and call needed define
 #define DEF_CMD(stack, name)\
 {\
 if (CheckMoreTwoElem(stack)) {\
@@ -30,7 +46,7 @@ if (CheckMoreTwoElem(stack)) {\
     Pop(stack, &sn);\
     CMD_##name(stack, fn, sn);\
 } else {\
-    printf("Operation error! Few elements\n");\
+    FileLogCMD("Operation error! Few elements\n");\
 }\
 }
 
@@ -54,7 +70,7 @@ void Out(Stack* stack)
 {
     float value = 0;
     Pop(stack, &value);
-    printf("%f\n", value);
+    FileLogCMD("%f\n", value);
 }
 
 
@@ -88,10 +104,15 @@ float SwitchMaskVal(int mask, char* data, int* ind)
 
 int IdentifyData(Stack* stack, char* data, int size, float* memory, float* registers)
 {
+    if (stack == NULL)
+    {
+        errno = ErrorCode::NULLPTR;
+        return -1;
+    }
     Stack* stack_ret = CreateStack("ReturnIndexes");
     for (int i = 0, k = 0; i < size; i++, k++)
     {
-        //printf("errno %d DATA %d i %d\n", errno, data[i], i);
+        printf("errno %d DATA %d i %d\n", errno, data[i], i);
         int dsplmt = sizeof(int) - 1;
         switch (data[i])
         {
@@ -101,8 +122,7 @@ int IdentifyData(Stack* stack, char* data, int size, float* memory, float* regis
                 bool constant = data[++i];
                 bool operate_memory = data[++i];
 
-                int mask = reg * 100 + constant * 10 + operate_memory;
-                int mem_index = 0;
+                int mask = MaskCount(reg, constant, operate_memory);
 
                 char reg_value = SwitchMaskReg(mask, data, &i);
                 float value = SwitchMaskVal(mask, data, &i);
@@ -114,14 +134,18 @@ int IdentifyData(Stack* stack, char* data, int size, float* memory, float* regis
                     Push(stack, registers[reg_value - 1]);
                     break;
                 case Mask::IOI:
-                    mem_index = (int)registers[reg_value - 1];
+                {
+                    int mem_index = (int)registers[reg_value - 1];
                     Push(stack, memory[mem_index]);
                     break;
+                }
                 case Mask::III:
-                    mem_index = (int)registers[reg_value - 1] + (int)value;
+                {
+                    int mem_index = (int)registers[reg_value - 1] + (int)value;
                     Push(stack, memory[mem_index]);
                     i += dsplmt;
                     break;
+                }
                 case Mask::IIO:
                     Push(stack, registers[reg_value - 1] + value);
                     i += dsplmt;
@@ -143,8 +167,7 @@ int IdentifyData(Stack* stack, char* data, int size, float* memory, float* regis
                 bool constant = data[++i];
                 bool operate_memory = data[++i];
 
-                int mask = reg * 100 + constant * 10 + operate_memory;
-                int mem_index = 0;
+                int mask = MaskCount(reg, constant, operate_memory);
 
                 char reg_value = SwitchMaskReg(mask, data, &i);
                 float value = SwitchMaskVal(mask, data, &i);
@@ -157,17 +180,74 @@ int IdentifyData(Stack* stack, char* data, int size, float* memory, float* regis
                     Pop(stack, &registers[reg_value - 1]);
                     break;
                 case Mask::IOI:
-                    mem_index = (int)registers[reg_value - 1];
+                {
+                    int mem_index = (int)registers[reg_value - 1];
                     Pop(stack, &memory[mem_index]);
                     break;
-                case Mask::IIO:
-                    mem_index = (int)registers[reg_value - 1] + (int)value;
+                }
+                case Mask::III:
+                {
+                    int mem_index = (int)registers[reg_value - 1] + (int)value;
                     Pop(stack, &memory[mem_index]);
+                    break;
+                }
+                case Mask::OII:
+                    Pop(stack, &memory[(int)value]);
                     break;
                 }
                 
                 break;
             }
+        case Command::OUT:
+        {
+            bool reg = data[++i];
+            bool constant = data[++i];
+            bool operate_memory = data[++i];
+
+            int mask = MaskCount(reg, constant, operate_memory);
+
+            char reg_value = SwitchMaskReg(mask, data, &i);
+            float value = SwitchMaskVal(mask, data, &i);
+
+            switch (mask)
+            {
+            case Mask::OOO:
+            {
+                float stk_val = 0;
+                Pop(stack, &stk_val);
+                FileLogCMD("%f\n", stk_val);
+                break;
+            }
+            case Mask::IOO:
+                FileLogCMD("%f\n", registers[reg_value - 1]);
+                break;
+            case Mask::OIO:
+                FileLogCMD("%f\n", value);
+                break;
+            case Mask::IOI:
+            {
+                int mem_index = (int)registers[reg_value - 1];
+                FileLogCMD("%f\n", memory[mem_index]);
+                break;
+            }
+            case Mask::OII:
+                FileLogCMD("%f\n", memory[(int)value]);
+                break;
+            case Mask::III:
+            {
+                int mem_index = (int)registers[reg_value - 1] + (int)value;
+                FileLogCMD("%f\n", memory[mem_index]);
+                break;
+            }
+            case Mask::IIO:
+            {
+                float reg_const_val = registers[reg_value - 1] + value;
+                FileLogCMD("%f\n", reg_const_val);
+                break;
+            }
+            }
+            break;
+        }
         case Command::ADD:
             {
                 DEF_CMD(stack, ADD);
@@ -188,7 +268,7 @@ int IdentifyData(Stack* stack, char* data, int size, float* memory, float* regis
                 DEF_CMD(stack, DIV);
                 if (errno)
                 {
-                    return errno;
+                    return -1;
                 }
                 break;
             }
@@ -197,22 +277,17 @@ int IdentifyData(Stack* stack, char* data, int size, float* memory, float* regis
                 Sqrt(stack);
                 break;
             }
-        case Command::OUT:
-            {
-                Out(stack);
-                break;
-            }
         case Command::DMP:
             {
-                Dump(stack);
+                DumpStk(stack);
                 break;
             }
         case Command::HLT:
             {
-                printf("The end of the programm\n");
-                exit(0);
+                FileLogCMD("The end of the programm\n");
+                return -1;
             }
-        case Command::IN:
+        case Command::MOV:
             {
                 char reg_value = data[++i];
                 float* value = (float*)&data[++i];
@@ -256,28 +331,35 @@ int IdentifyData(Stack* stack, char* data, int size, float* memory, float* regis
                 i = int(&fn) + dsplmt + 1;
                 break;
             }
+        case Command::IN:
+        {
+            float inval = 0;
+            scanf("%f", &inval);
+            Push(stack, inval);
+            break;
+        }
         default:
             {
-                printf("Unknown command\n");
+                FileLogCMD("Unknown command\n");
                 errno = ErrorCode::COMMANDERROR;
-                return errno;
+                return -1;
             }
         }
     }
-    return errno;
+    return 0;
 }
 
 int GetParametersFileInt(FILE* file, int* text, int syms)
 {
     if (text == NULL)
     {
-        fputs("Error memory allocation for *text\n", stderr);
+        FileLogCMD("Error memory allocation for *text\n");
         errno = ErrorCode::MEMORYERROR;
         return 0;
     }
     if (fread(text, sizeof(int), syms, file) != syms)
     {
-        fputs("Error reading", stderr);
+        FileLogCMD("Error reading");
         errno = ErrorCode::FILEERROR;
         return 0;
     }

@@ -1,0 +1,4 @@
+push 5
+pop cx
+out cx + 6
+hlt

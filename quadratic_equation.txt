@@ -1,6 +1,9 @@
-in ax,1
-in bx,3
-in cx,-4
+in
+pop ax
+in
+pop bx
+in
+pop cx
 push bx
 push bx
 mul

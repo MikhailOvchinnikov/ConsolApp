@@ -16,7 +16,7 @@
 
 int main()
 {
-    char file_name[] = "files/_quadratic_equation.txt";
+    char file_name[] = "files/_commands.txt";
     FILE* file = fopen(file_name, "rb");
     if (file == NULL)
     {
@@ -33,5 +33,5 @@ int main()
     float* memory = (float*)calloc(20, sizeof(float));
     float* registers = (float*)calloc(3, sizeof(float));
     IdentifyData(stack, text, syms, memory, registers);
-    Clear(stack);
+    ClearStk(stack);
 }
