@@ -16,7 +16,7 @@
 
 int main()
 {
-    char file_name[] = "files/_commands.txt";
+    char file_name[] = "files/_factorial_2.0.txt";
     FILE* file = fopen(file_name, "rb");
     if (file == NULL)
     {

@@ -26,14 +26,8 @@ if (val1 == 0){\
 }
 
 
-void FileLogCMD(const char* format, ...)
-{
-    static FILE* log_file = fopen("cmd_log.txt", "w");
-    va_list args;
-    va_start(args, format);
-    vfprintf(log_file, format, args);
-    va_end(args);
-}
+#define as_float(arg) *((float*)&(arg))
+#define as_int(arg) *((int*)&(arg))
 
 
 //Define operation and call needed define
@@ -48,6 +42,17 @@ if (CheckMoreTwoElem(stack)) {\
 } else {\
     FileLogCMD("Operation error! Few elements\n");\
 }\
+}
+
+
+
+void FileLogCMD(const char* format, ...)
+{
+    static FILE* log_file = fopen("cmd_log.txt", "w");
+    va_list args;
+    va_start(args, format);
+    vfprintf(log_file, format, args);
+    va_end(args);
 }
 
 
@@ -96,7 +101,9 @@ float SwitchMaskVal(int mask, char* data, int* ind)
     case Mask::IIO:
     case Mask::OIO:
     case Mask::OII:
-        return *(float*)&data[++*ind];
+    {
+        return as_float(data[++ * ind]);
+    }
     }
     return 0;
 }
@@ -113,7 +120,7 @@ int IdentifyData(Stack* stack, char* data, int size, float* memory, float* regis
     for (int i = 0, k = 0; i < size; i++, k++)
     {
         printf("errno %d DATA %d i %d\n", errno, data[i], i);
-        int dsplmt = sizeof(int) - 1;
+        int dsplmt = sizeof(float) - 1;
         switch (data[i])
         {
         case Command::PUSH:
@@ -189,10 +196,12 @@ int IdentifyData(Stack* stack, char* data, int size, float* memory, float* regis
                 {
                     int mem_index = (int)registers[reg_value - 1] + (int)value;
                     Pop(stack, &memory[mem_index]);
+                    i += dsplmt;
                     break;
                 }
                 case Mask::OII:
                     Pop(stack, &memory[(int)value]);
+                    i += dsplmt;
                     break;
                 }
                 
@@ -223,6 +232,7 @@ int IdentifyData(Stack* stack, char* data, int size, float* memory, float* regis
                 break;
             case Mask::OIO:
                 FileLogCMD("%f\n", value);
+                i += dsplmt;
                 break;
             case Mask::IOI:
             {
@@ -232,17 +242,20 @@ int IdentifyData(Stack* stack, char* data, int size, float* memory, float* regis
             }
             case Mask::OII:
                 FileLogCMD("%f\n", memory[(int)value]);
+                i += dsplmt;
                 break;
             case Mask::III:
             {
                 int mem_index = (int)registers[reg_value - 1] + (int)value;
                 FileLogCMD("%f\n", memory[mem_index]);
+                i += dsplmt;
                 break;
             }
             case Mask::IIO:
             {
                 float reg_const_val = registers[reg_value - 1] + value;
                 FileLogCMD("%f\n", reg_const_val);
+                i += dsplmt;
                 break;
             }
             }
@@ -290,27 +303,25 @@ int IdentifyData(Stack* stack, char* data, int size, float* memory, float* regis
         case Command::MOV:
             {
                 char reg_value = data[++i];
-                float* value = (float*)&data[++i];
-                registers[reg_value - 1] = *value;
+                registers[reg_value - 1] = as_float(data[++i]);
                 i += dsplmt;
                 break;
             }
         case Command::JMP:
             {
-                int* jmp_comm = (int*)&data[++i];
-                i = *jmp_comm - 1;
+                i = as_int(data[++i]) - 1;
                 break;
             }
         case Command::JA:
             {
-                int* ja_comm = (int*)&data[++i];
+                int ja_comm = as_int(data[++i]);
                 float f_value = 0;
                 float s_value = 0;
                 Pop(stack, &f_value);
                 Pop(stack, &s_value);
                 if (f_value > s_value)
                 {
-                    i = *ja_comm - 1;
+                    i = ja_comm - 1;
                 }
                 else
                 {
@@ -321,14 +332,14 @@ int IdentifyData(Stack* stack, char* data, int size, float* memory, float* regis
         case Command::CALL:
             {
                 Push(stack_ret, (float)i);
-                i = data[++i];
+                i = (int)data[++i] - 1;
                 break;
             }
         case Command::RET:
             {
                 float fn = 0;
                 Pop(stack_ret, &fn);
-                i = int(&fn) + dsplmt + 1;
+                i = (int)fn + dsplmt + 1;
                 break;
             }
         case Command::IN:
@@ -340,7 +351,7 @@ int IdentifyData(Stack* stack, char* data, int size, float* memory, float* regis
         }
         default:
             {
-                FileLogCMD("Unknown command\n");
+                FileLogCMD("Unknown command %d\n", data[i]);
                 errno = ErrorCode::COMMANDERROR;
                 return -1;
             }
